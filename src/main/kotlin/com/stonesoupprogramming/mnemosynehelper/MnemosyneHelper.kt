@@ -22,11 +22,12 @@ fun StringBuilder.appendLine(line : String = "\n"){
 }
 
 data class Card(var question : String = "",
-                var choices : List<String> = listOf(),
+                var choices : MutableList<String> = mutableListOf(),
                 var answer: String = "",
                 var explanation : String = ""){
 
     private val abcs : Map<Int, String>
+    private var choiceBank : MutableList<String> = mutableListOf()
 
     init {
         val abcMap = mutableMapOf<Int, String>()
@@ -38,9 +39,21 @@ data class Card(var question : String = "",
 
     fun formatTop () : String {
         return with(StringBuilder()){
-            appendLine(question)
+            appendLine(question.replace("$$", "__________"))
             appendLine("""<ol type="A">""")
-            choices.forEachIndexed { index, s -> appendLine("""<!-- ${abcs[index]} --> <li>$s</li>""") }
+            choices.shuffle()
+            choiceBank.clear()
+            if(choices.size > 3){
+                choiceBank.addAll(choices.filter { it != answer })
+                if(choiceBank.size > 3){
+                    choiceBank = choiceBank.subList(0, 3)
+                }
+                choiceBank.add(answer)
+                choiceBank.shuffle()
+            } else {
+                choiceBank.addAll(choices)
+            }
+            choiceBank.forEachIndexed { index, s -> appendLine("""<!-- ${abcs[index]} --> <li>$s</li>""") }
             appendLine("""</ol>""")
             toString()
         }
@@ -48,7 +61,7 @@ data class Card(var question : String = "",
 
     fun formatBottom () : String {
         return with(StringBuilder()){
-            appendLine("Answer: $answer")
+            appendLine("Answer: ${abcs[choiceBank.indexOf(answer)]}")
             if(explanation.isNotBlank()){
                 appendLine("<hr/>")
                 appendLine(explanation)
@@ -58,25 +71,31 @@ data class Card(var question : String = "",
     }
 }
 
+class HelperTextArea : TextArea(){
+    init {
+        this.wrapTextProperty().value = true
+    }
+}
+
 class MnemosyneHelper : Application(){
 
     private val questionText = Text("Question")
-    private val questionBox = TextArea()
+    private val questionBox = HelperTextArea()
 
     private val choicesText = Text("Choices--Separate by 'Enter' key")
-    private val choicesBox = TextArea()
+    private val choicesBox = HelperTextArea()
 
     private val answerText = Text("Correct Answer Here")
-    private val answerBox = TextArea()
+    private val answerBox = HelperTextArea()
 
     private val explanationText = Text("Optional Detailed Explanation")
-    private val explanationBox = TextArea()
+    private val explanationBox = HelperTextArea()
 
     private val upperText = Text("Paste into top half")
-    private val upperBox = TextArea()
+    private val upperBox = HelperTextArea()
 
     private val bottomText = Text("Paste into the bottom half")
-    private val bottomBox = TextArea()
+    private val bottomBox = HelperTextArea()
 
     private val card = Card()
 
@@ -116,23 +135,27 @@ class MnemosyneHelper : Application(){
         questionBox.textProperty().addListener { _, _, newValue ->
             card.question = newValue
             upperBox.text = card.formatTop()
+            bottomBox.text = card.formatBottom()
         }
         choicesBox.textProperty().addListener { _, _, newValue ->
-            card.choices = newValue.split("\n")
+            card.choices = newValue.split("\n").toMutableList()
             upperBox.text = card.formatTop()
+            bottomBox.text = card.formatBottom()
         }
         answerBox.textProperty().addListener { _, _, newValue ->
             card.answer = newValue
+            upperBox.text = card.formatTop()
             bottomBox.text = card.formatBottom()
         }
         explanationBox.textProperty().addListener { _, _, newValue ->
             card.explanation = newValue
+            upperBox.text = card.formatTop()
             bottomBox.text = card.formatBottom()
         }
         clearButton.setOnAction {
             with(card){
                 question = ""
-                choices = listOf()
+                choices.clear()
                 answer = ""
                 explanation = ""
             }
