@@ -79,7 +79,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>com.stonesoupprogramming.writerfx.WriterFXKt</mainClass>
+                    <mainClass>com.stonesoupprogramming.mnemosynehelper.MnemosyneHelperKt</mainClass>
                 </configuration>
             </plugin>
 

@@ -40,8 +40,9 @@ data class Card(var question : String = "",
     fun formatTop () : String {
         return with(StringBuilder()){
             appendLine(question.replace("$$", "__________"))
-            appendLine("""<ol type="A">""")
-            choices.shuffle()
+            if(choices.size > 2){
+                choices.shuffle()
+            }
             choiceBank.clear()
             if(choices.size > 3){
                 choiceBank.addAll(choices.filter { it != answer })
@@ -53,18 +54,17 @@ data class Card(var question : String = "",
             } else {
                 choiceBank.addAll(choices)
             }
-            choiceBank.forEachIndexed { index, s -> appendLine("""<!-- ${abcs[index]} --> <li>$s</li>""") }
-            appendLine("""</ol>""")
+            choiceBank.forEachIndexed { index, s -> append("\n" + """${abcs[index]}. $s""") }
             toString()
         }
     }
 
     fun formatBottom () : String {
         return with(StringBuilder()){
-            appendLine("Answer: ${abcs[choiceBank.indexOf(answer)]}")
+            append("Answer: ${abcs[choiceBank.indexOf(answer)]}")
             if(explanation.isNotBlank()){
-                appendLine("<hr/>")
-                appendLine(explanation)
+                append("\n<hr/>")
+                append("\n" + explanation)
             }
             toString()
         }
